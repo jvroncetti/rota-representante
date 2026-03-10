@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="manifest" href="manifest.json">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -38,6 +39,7 @@ textarea{width:100%;margin-top:6px}
 <div class="tabs">
 <div class="tab active" onclick="showTab('rota',this)">📋 Rota</div>
 <div class="tab" onclick="showTab('catalogo',this)">📚 Catálogo</div>
+<div class="tab" onclick="showTab('mapa',this)">🗺️ Mapa</div>
 </div>
 
 <div id="rota">
@@ -210,6 +212,46 @@ render();
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div id="mapa" style="display:none">
+<div style="height:80vh" id="map"></div>
+</div>
+
+
+<script>
+let map;
+function initMap(){
+ if(map) return;
+ map = L.map('map').setView([-20.3155,-40.3128],12);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+
+ if(typeof data !== "undefined"){
+  data.forEach(c=>{
+   if(c.Endereco_full){
+    fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(c.Endereco_full))
+    .then(r=>r.json())
+    .then(res=>{
+      if(res && res[0]){
+        let lat=res[0].lat;
+        let lon=res[0].lon;
+        L.marker([lat,lon]).addTo(map).bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
+      }
+    });
+   }
+  });
+ }
+}
+
+const oldShowTab = showTab;
+showTab = function(tab,el){
+ oldShowTab(tab,el);
+ if(tab==="mapa"){
+   setTimeout(initMap,200);
+ }
 }
 </script>
 
