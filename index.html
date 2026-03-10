@@ -3,7 +3,6 @@
 <html>
 <head>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="manifest" href="manifest.json">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Rota Representante</title>
@@ -208,158 +207,76 @@ render();
 
 </script>
 
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <div id="mapa" style="display:none">
-<div style="height:80vh" id="map"></div>
+<div id="map" style="height:80vh"></div>
 </div>
 
 
 <script>
-let map;
-function initMap(){
- if(map) return;
- map = L.map('map').setView([-20.3155,-40.3128],12);
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 
- if(typeof data !== "undefined"){
-  data.forEach(c=>{
-   if(c.Endereco_full){
-    fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(c.Endereco_full))
-    .then(r=>r.json())
-    .then(res=>{
-      if(res && res[0]){
-        let lat=res[0].lat;
-        let lon=res[0].lon;
-        L.marker([lat,lon]).addTo(map).bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
-      }
-    });
-   }
-  });
- }
-}
-
-const oldShowTab = showTab;
-showTab = function(tab,el){
- oldShowTab(tab,el);
- if(tab==="mapa"){
-   setTimeout(initMap,200);
- }
-}
-</script>
-
-
-<script>
-let map;
-
-function initMap(){
- if(map) return;
-
- map = L.map('map').setView([-20.3155,-40.3128],12);
-
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© OpenStreetMap'
- }).addTo(map);
-
- setTimeout(()=>{ map.invalidateSize(); },300);
-
- if(typeof data !== "undefined"){
-  data.forEach(c=>{
-   if(c.Endereco_full){
-    fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(c.Endereco_full))
-    .then(r=>r.json())
-    .then(res=>{
-      if(res && res[0]){
-        let lat=res[0].lat;
-        let lon=res[0].lon;
-        L.marker([lat,lon]).addTo(map)
-        .bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
-      }
-    });
-   }
-  });
- }
-}
-
-const oldShowTab = showTab;
-showTab = function(tab,el){
- oldShowTab(tab,el);
- if(tab==="mapa"){
-   setTimeout(initMap,200);
- }
-}
-</script>
-
-
-<script>
 let map;
 let markers=[];
 
-function initMap(){
+async function initMap(){
 
- if(map){
-   map.invalidateSize();
-   return;
+ if(!map){
+   map = L.map('map').setView([-20.3155,-40.3128],12);
+
+   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+     attribution:'© OpenStreetMap'
+   }).addTo(map);
  }
-
- map = L.map('map').setView([-20.3155,-40.3128],12);
-
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-   attribution:'© OpenStreetMap'
- }).addTo(map);
-
- loadMarkers();
-}
-
-function loadMarkers(){
-
- if(typeof data === "undefined") return;
 
  markers.forEach(m=>map.removeLayer(m));
  markers=[];
 
- let day=document.getElementById("day") ? document.getElementById("day").value : null;
+ let daySelect=document.getElementById("day");
+ let day = daySelect ? daySelect.value : null;
 
- data.forEach(c=>{
+ if(typeof data==="undefined") return;
 
-   if(day && String(c.Dia)!==String(day)) return;
+ let clients=data.filter(c=>!day || String(c.Dia)===String(day));
 
-   if(!c.Maps) return;
+ for(let c of clients){
+
+   if(!c.Maps) continue;
 
    let q=c.Maps.split("query=")[1];
-   if(!q) return;
+   if(!q) continue;
 
-   fetch("https://nominatim.openstreetmap.org/search?format=json&q="+q)
-   .then(r=>r.json())
-   .then(res=>{
+   try{
 
-     if(!res || !res[0]) return;
+     let r=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+q);
+     let res=await r.json();
 
-     let lat=res[0].lat;
-     let lon=res[0].lon;
+     if(res && res[0]){
 
-     let m=L.marker([lat,lon]).addTo(map)
-      .bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
+       let lat=res[0].lat;
+       let lon=res[0].lon;
 
-     markers.push(m);
+       let marker=L.marker([lat,lon])
+         .addTo(map)
+         .bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
 
-   });
+       markers.push(marker);
 
- });
+     }
 
- setTimeout(()=>{map.invalidateSize();},300);
+     await new Promise(r=>setTimeout(r,200));
+
+   }catch(e){}
+
+ }
+
+ setTimeout(()=>map.invalidateSize(),300);
+
 }
 
 const oldShowTab = showTab;
 
-showTab = function(tab,el){
+showTab=function(tab,el){
 
  oldShowTab(tab,el);
 
