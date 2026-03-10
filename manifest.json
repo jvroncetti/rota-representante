@@ -1,0 +1,8 @@
+{
+  "name": "Rota Representante",
+  "short_name": "Rota",
+  "display": "standalone",
+  "start_url": ".",
+  "background_color": "#1f6feb",
+  "theme_color": "#1f6feb"
+}
