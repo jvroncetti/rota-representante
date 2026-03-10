@@ -288,5 +288,93 @@ showTab=function(tab,el){
 
 </script>
 
+
+<script>
+
+let map;
+let markers=[];
+
+function createMap(){
+
+ if(!map){
+   map = L.map('map').setView([-20.3155,-40.3128],12);
+
+   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+     attribution:'© OpenStreetMap'
+   }).addTo(map);
+ }
+
+}
+
+async function loadMarkers(){
+
+ markers.forEach(m=>map.removeLayer(m));
+ markers=[];
+
+ let dayEl=document.getElementById("day");
+ let day=dayEl ? dayEl.value : null;
+
+ if(typeof data==="undefined") return;
+
+ let clients=data.filter(c=>!day || String(c.Dia)===String(day));
+
+ for(let c of clients){
+
+   if(!c.Endereco_full) continue;
+
+   let q=encodeURIComponent(c.Endereco_full);
+
+   try{
+
+     let r=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+q);
+     let res=await r.json();
+
+     if(res && res[0]){
+
+       let lat=res[0].lat;
+       let lon=res[0].lon;
+
+       let marker=L.marker([lat,lon])
+        .addTo(map)
+        .bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
+
+       markers.push(marker);
+
+     }
+
+     await new Promise(r=>setTimeout(r,600));
+
+   }catch(e){}
+
+ }
+
+ map.invalidateSize();
+
+}
+
+function initMap(){
+
+ createMap();
+
+ setTimeout(()=>{
+   loadMarkers();
+ },300);
+
+}
+
+const oldShowTab = showTab;
+
+showTab=function(tab,el){
+
+ oldShowTab(tab,el);
+
+ if(tab==="mapa"){
+   setTimeout(initMap,300);
+ }
+
+}
+
+</script>
+
 </body>
 </html>
