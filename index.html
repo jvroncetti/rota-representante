@@ -255,5 +255,47 @@ showTab = function(tab,el){
 }
 </script>
 
+
+<script>
+let map;
+
+function initMap(){
+ if(map) return;
+
+ map = L.map('map').setView([-20.3155,-40.3128],12);
+
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap'
+ }).addTo(map);
+
+ setTimeout(()=>{ map.invalidateSize(); },300);
+
+ if(typeof data !== "undefined"){
+  data.forEach(c=>{
+   if(c.Endereco_full){
+    fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(c.Endereco_full))
+    .then(r=>r.json())
+    .then(res=>{
+      if(res && res[0]){
+        let lat=res[0].lat;
+        let lon=res[0].lon;
+        L.marker([lat,lon]).addTo(map)
+        .bindPopup("<b>"+c.Cliente+"</b><br>"+c.Endereco_full);
+      }
+    });
+   }
+  });
+ }
+}
+
+const oldShowTab = showTab;
+showTab = function(tab,el){
+ oldShowTab(tab,el);
+ if(tab==="mapa"){
+   setTimeout(initMap,200);
+ }
+}
+</script>
+
 </body>
 </html>
