@@ -376,5 +376,31 @@ showTab=function(tab,el){
 
 </script>
 
+
+<script>
+function openDayMap(){
+
+ let day=document.getElementById("day").value;
+
+ let clients=data.filter(c=>String(c.Dia)===String(day));
+
+ if(!clients.length){
+   alert("Nenhum cliente para este dia");
+   return;
+ }
+
+ let url="https://www.google.com/maps/dir/";
+
+ clients.forEach(c=>{
+   if(c.Endereco_full){
+     url+=encodeURIComponent(c.Endereco_full)+"/";
+   }
+ });
+
+ window.open(url,"_blank");
+
+}
+</script>
+
 </body>
 </html>
